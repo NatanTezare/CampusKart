@@ -1,21 +1,23 @@
 // src/config/db.js
-const mysql = require('mysql2/promise'); // Using the promise-based version
+const { Pool } = require('pg');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Create a connection pool. A pool is better than a single connection for web apps
-// as it manages multiple connections, which is more efficient.
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// Determine if we are in a production environment
+const isProduction = process.env.NODE_ENV === 'production';
 
-console.log('MySQL Connection Pool Created.');
+// Configuration object
+const connectionConfig = {
+    connectionString: process.env.DB_CONNECTION_STRING,
+    // Add SSL for production connections, but not for local development
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+};
 
-module.exports = pool;
+const pool = new Pool(connectionConfig);
+
+console.log('PostgreSQL Connection Pool Created.');
+
+module.exports = {
+    query: (text, params) => pool.query(text, params),
+};
