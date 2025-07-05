@@ -19,5 +19,6 @@ const pool = new Pool(connectionConfig);
 console.log('PostgreSQL Connection Pool Created.');
 
 module.exports = {
+    // We export the query function to keep controllers the same
     query: (text, params) => pool.query(text, params),
 };
