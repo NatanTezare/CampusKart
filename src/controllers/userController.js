@@ -5,7 +5,7 @@ const db = require('../config/db');
 const sendEmail = require('../utils/sendEmail');
 
 const registerUser = async (req, res) => {
-    const { firstName, lastName, usiuEmail, password } = req.body;
+    const { firstName, lastName, usiuEmail, password, phone_number } = req.body; // Add phone_number
 
     if (!usiuEmail || !usiuEmail.toLowerCase().endsWith('@usiu.ac.ke')) {
         return res.status(400).json({ message: 'Registration is restricted to valid @usiu.ac.ke emails only.' });
@@ -23,8 +23,8 @@ const registerUser = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const sql = 'INSERT INTO users (first_name, last_name, usiu_email, password_hash) VALUES ($1, $2, $3, $4) RETURNING user_id';
-        const { rows } = await db.query(sql, [firstName, lastName, usiuEmail, hashedPassword]);
+        const sql = 'INSERT INTO users (first_name, last_name, usiu_email, password_hash, phone_number) VALUES ($1, $2, $3, $4, $5) RETURNING user_id';
+        const { rows } = await db.query(sql, [firstName, lastName, usiuEmail, hashedPassword, phone_number]); // Add phone_number to the parameters
         const newUserId = rows[0].user_id;
 
         const verificationToken = crypto.randomBytes(32).toString('hex');

@@ -46,7 +46,15 @@ const getAllItems = async (req, res) => {
 const getSingleItem = async (req, res) => {
     try {
         const { itemId } = req.params;
-        const sql = `SELECT i.item_id, i.title, i.description, i.price, i.category, i.quantity, i.image_url, i.created_at, u.first_name AS seller_name, u.usiu_email AS seller_email FROM items AS i JOIN users AS u ON i.seller_id = u.user_id WHERE i.item_id = $1 AND i.listing_status = 'active'`;
+        const sql = `SELECT 
+            i.item_id, i.title, i.description, i.price, i.category, i.quantity, i.image_url, i.created_at,
+            u.first_name AS seller_name,
+            u.usiu_email AS seller_email,
+            u.phone_number AS seller_phone -- Add this line
+        FROM items AS i
+        JOIN users AS u ON i.seller_id = u.user_id
+        WHERE i.item_id = $1 AND i.listing_status = 'active' AND i.quantity > 0`;
+        
         const { rows: items } = await db.query(sql, [itemId]);
         if (items.length === 0) {
             return res.status(404).json({ message: 'Item not found or is not active' });
