@@ -1,14 +1,23 @@
 const db = require('../config/db');
 
+// In createItem function in itemController.js
 const createItem = async (req, res) => {
     const { title, description, price, category, quantity } = req.body;
     const seller_id = req.user.user_id;
+
+    // The URL of the uploaded image is now in req.file.path
+    const image_url = req.file ? req.file.path : null;
+
     if (!title || !description || !price || !category) {
         return res.status(400).json({ message: 'Please include all required fields' });
     }
+    if (!image_url) {
+        return res.status(400).json({ message: 'Image is required' });
+    }
+
     try {
-        const sql = 'INSERT INTO items (seller_id, title, description, price, category, quantity) VALUES ($1, $2, $3, $4, $5, $6) RETURNING item_id';
-        const { rows } = await db.query(sql, [seller_id, title, description, price, category, quantity || 1]);
+        const sql = 'INSERT INTO items (seller_id, title, description, price, category, quantity, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING item_id';
+        const { rows } = await db.query(sql, [seller_id, title, description, price, category, quantity || 1, image_url]);
         res.status(201).json({ message: 'Item created successfully!', itemId: rows[0].item_id });
     } catch (error) {
         console.error('Database Error:', error);
@@ -54,7 +63,7 @@ const getSingleItem = async (req, res) => {
         FROM items AS i
         JOIN users AS u ON i.seller_id = u.user_id
         WHERE i.item_id = $1 AND i.listing_status = 'active' AND i.quantity > 0`;
-        
+
         const { rows: items } = await db.query(sql, [itemId]);
         if (items.length === 0) {
             return res.status(404).json({ message: 'Item not found or is not active' });

@@ -1,4 +1,5 @@
 // src/routes/itemRoutes.js
+const upload = require('../config/cloudinary'); // Import the upload config
 const express = require('express');
 const router = express.Router();
 // Add deleteItem to the import
@@ -6,7 +7,7 @@ const { createItem, getAllItems, getSingleItem, updateItem, deleteItem } = requi
 const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/items (Private) - Create an item
-router.post('/', protect, createItem);
+router.post('/', protect, upload.single('image'), createItem);
 
 // GET /api/items (Public) - Get all active items
 router.get('/', getAllItems);
