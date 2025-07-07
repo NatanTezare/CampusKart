@@ -16,7 +16,7 @@ router.get('/', getAllItems);
 router.get('/:itemId', getSingleItem);
 
 // PUT /api/items/:itemId (Private) - Update an item
-router.put('/:itemId', protect, updateItem);
+router.put('/:itemId', protect, upload.single('image'), updateItem);
 
 // DELETE /api/items/:itemId (Private) - Delete an item
 router.delete('/:itemId', protect, deleteItem); // Add this new route

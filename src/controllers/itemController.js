@@ -75,33 +75,62 @@ const getSingleItem = async (req, res) => {
     }
 };
 
-const updateItem = async (req, res) => {
-    try {
-        const { itemId } = req.params;
-        const userId = req.user.user_id;
-        const { rows } = await db.query('SELECT * FROM items WHERE item_id = $1', [itemId]);
-        const item = rows[0];
-        if (!item) {
-            return res.status(404).json({ message: 'Item not found' });
+    const updateItem = async (req, res) => {
+        try {
+            const { itemId } = req.params;
+            const userId = req.user.user_id;
+
+            // 1. Get the original item from the database
+            const { rows } = await db.query('SELECT * FROM items WHERE item_id = $1', [itemId]);
+            const item = rows[0];
+
+            if (!item) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+            if (item.seller_id !== userId) {
+                return res.status(403).json({ message: 'User not authorized to update this item' });
+            }
+
+            // 2. Check if a new image was uploaded.
+            // If req.file exists, multer and cloudinary worked, so use the new URL.
+            // If not, keep the existing image URL from the database.
+            const updatedImageUrl = req.file ? req.file.path : item.image_url;
+
+            // 3. Get the rest of the updated data from the request body
+            const { title, description, price, category, quantity, listing_status } = req.body;
+
+            // Use existing values as defaults if new values aren't provided
+            const updatedTitle = title || item.title;
+            const updatedDescription = description || item.description;
+            const updatedPrice = price || item.price;
+            const updatedCategory = category || item.category;
+            const updatedQuantity = quantity === undefined ? item.quantity : quantity;
+            const updatedStatus = listing_status || item.listing_status;
+
+            // 4. Create and execute the updated SQL query
+            const sql = `
+                UPDATE items 
+                SET title = $1, description = $2, price = $3, category = $4, quantity = $5, listing_status = $6, image_url = $7 
+                WHERE item_id = $8
+            `;
+            await db.query(sql, [
+                updatedTitle, 
+                updatedDescription, 
+                updatedPrice, 
+                updatedCategory, 
+                updatedQuantity, 
+                updatedStatus, 
+                updatedImageUrl, // Add the image url to the query parameters
+                itemId
+            ]);
+
+            res.status(200).json({ message: 'Item updated successfully' });
+
+        } catch (error) {
+            console.error('Database Error:', error);
+            res.status(500).json({ message: 'Server error while updating item' });
         }
-        if (item.seller_id !== userId) {
-            return res.status(403).json({ message: 'User not authorized to update this item' });
-        }
-        const { title, description, price, category, quantity, listing_status } = req.body;
-        const updatedTitle = title || item.title;
-        const updatedDescription = description || item.description;
-        const updatedPrice = price || item.price;
-        const updatedCategory = category || item.category;
-        const updatedQuantity = quantity === undefined ? item.quantity : quantity;
-        const updatedStatus = listing_status || item.listing_status;
-        const sql = `UPDATE items SET title = $1, description = $2, price = $3, category = $4, quantity = $5, listing_status = $6 WHERE item_id = $7`;
-        await db.query(sql, [updatedTitle, updatedDescription, updatedPrice, updatedCategory, updatedQuantity, updatedStatus, itemId]);
-        res.status(200).json({ message: 'Item updated successfully' });
-    } catch (error) {
-        console.error('Database Error:', error);
-        res.status(500).json({ message: 'Server error while updating item' });
-    }
-};
+    };
 
 const deleteItem = async (req, res) => {
     try {
