@@ -14,7 +14,7 @@ const sendEmail = async (options) => {
 
     // 2) Define the email options
     const mailOptions = {
-        from: 'CampusKart Admin <your-email@gmail.com>', // Sender address
+        from: 'CampusKart Admin <campuskart2@gmail.com>', // Sender addrss
         to: options.email, // List of receivers
         subject: options.subject, // Subject line
         html: options.message, // HTML body
