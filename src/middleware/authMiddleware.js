@@ -14,8 +14,9 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             // 3. Get user from the database using the id from the token
-            // We select everything except the password hash for security
-            const [users] = await db.query('SELECT user_id, first_name, last_name, usiu_email, is_verified FROM users WHERE user_id = ?', [decoded.id]);
+            // --- FIXED an error here for PostgreSQL ---
+            const sql = 'SELECT user_id, first_name, last_name, usiu_email, is_verified, phone_number FROM users WHERE user_id = $1';
+            const { rows: users } = await db.query(sql, [decoded.id]);
 
             if (!users[0]) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
@@ -28,7 +29,7 @@ const protect = async (req, res, next) => {
             next();
 
         } catch (error) {
-            console.error(error);
+            console.error('Middleware Error:', error); // Changed log for clarity
             res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
