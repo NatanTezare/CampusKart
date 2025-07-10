@@ -3,7 +3,7 @@ const upload = require('../config/cloudinary'); // Import the upload config
 const express = require('express');
 const router = express.Router();
 // Add deleteItem to the import
-const { createItem, getAllItems, getSingleItem, updateItem, deleteItem } = require('../controllers/itemController');
+const { createItem, getAllItems, getSingleItem, updateItem, deleteItem, getMyItems } = require('../controllers/itemController');
 const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/items (Private) - Create an item
