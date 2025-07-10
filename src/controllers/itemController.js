@@ -1,5 +1,17 @@
 const db = require('../config/db');
 
+const getMyItems = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const sql = 'SELECT * FROM items WHERE seller_id = $1 ORDER BY created_at DESC';
+        const { rows: items } = await db.query(sql, [userId]);
+        res.status(200).json(items);
+    } catch (error) {
+        console.error('Database Error:', error);
+        res.status(500).json({ message: "Server error while fetching user's items" });
+    }
+};
+
 // In createItem function in itemController.js
 const createItem = async (req, res) => {
     const { title, description, price, category, quantity } = req.body;
@@ -153,3 +165,4 @@ const deleteItem = async (req, res) => {
 };
 
 module.exports = { createItem, getAllItems, getSingleItem, updateItem, deleteItem };
+module.exports = { /*...,*/ getMyItems };

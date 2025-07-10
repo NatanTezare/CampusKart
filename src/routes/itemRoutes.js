@@ -12,6 +12,9 @@ router.post('/', protect, upload.single('image'), createItem);
 // GET /api/items (Public) - Get all active items
 router.get('/', getAllItems);
 
+// GET /api/items/my-items (Private) - Get items for the logged-in user
+router.get('/my-items', protect, getMyItems); // Add this line
+
 // GET /api/items/:itemId (Public) - Get a single item
 router.get('/:itemId', getSingleItem);
 
