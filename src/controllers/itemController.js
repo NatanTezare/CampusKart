@@ -40,10 +40,22 @@ const createItem = async (req, res) => {
 const getAllItems = async (req, res) => {
     try {
         const { search, category } = req.query;
-        let sql = `SELECT i.item_id, i.title, i.price, i.category, i.image_url, u.first_name AS seller_name FROM items AS i JOIN users AS u ON i.seller_id = u.user_id`;
+        // ✅ FIX: Added "i.quantity" to the list of columns being selected
+        let sql = `
+            SELECT 
+                i.item_id, 
+                i.title, 
+                i.price, 
+                i.quantity, 
+                i.category, 
+                i.image_url, 
+                u.first_name AS seller_name 
+            FROM items AS i 
+            JOIN users AS u ON i.seller_id = u.user_id`;
+        
         const params = [];
-        let whereClauses = [];
-        whereClauses.push("i.listing_status = 'active' AND i.quantity > 0");
+        let whereClauses = ["i.listing_status = 'active' AND i.quantity > 0"];
+        
         if (search) {
             params.push(`%${search}%`);
             whereClauses.push(`(i.title ILIKE $${params.length} OR i.description ILIKE $${params.length})`);
@@ -52,10 +64,10 @@ const getAllItems = async (req, res) => {
             params.push(category);
             whereClauses.push(`i.category = $${params.length}`);
         }
-        if (whereClauses.length > 0) {
-            sql += " WHERE " + whereClauses.join(" AND ");
-        }
+        
+        sql += " WHERE " + whereClauses.join(" AND ");
         sql += " ORDER BY i.created_at DESC";
+        
         const { rows: items } = await db.query(sql, params);
         res.status(200).json(items);
     } catch (error) {
