@@ -5,14 +5,23 @@ const db = require('../config/db');
 const sendEmail = require('../utils/sendEmail');
 
 const registerUser = async (req, res) => {
-    const { firstName, lastName, usiuEmail, password, phone_number } = req.body; // Add phone_number
+    const { firstName, lastName, usiuEmail, password, phone_number } = req.body;
 
     if (!usiuEmail || !usiuEmail.toLowerCase().endsWith('@usiu.ac.ke')) {
         return res.status(400).json({ message: 'Registration is restricted to valid @usiu.ac.ke emails only.' });
     }
     if (!firstName || !lastName || !password) {
-        return res.status(400).json({ message: 'Please include all fields' });
+        return res.status(400).json({ message: 'Please include all required fields' });
     }
+
+    // --- ✅ NEW: Password Strength Validation ---
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+            message: 'Password is not strong enough. It must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).'
+        });
+    }
+    // --- End of New Code ---
 
     try {
         const { rows: existingUsers } = await db.query('SELECT * FROM users WHERE usiu_email = $1', [usiuEmail]);
@@ -24,15 +33,15 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const sql = 'INSERT INTO users (first_name, last_name, usiu_email, password_hash, phone_number) VALUES ($1, $2, $3, $4, $5) RETURNING user_id';
-        const { rows } = await db.query(sql, [firstName, lastName, usiuEmail, hashedPassword, phone_number]); // Add phone_number to the parameters
+        const { rows } = await db.query(sql, [firstName, lastName, usiuEmail, hashedPassword, phone_number]);
         const newUserId = rows[0].user_id;
 
         const verificationToken = crypto.randomBytes(32).toString('hex');
-        const tokenExpires = new Date(Date.now() + 3600000);
+        const tokenExpires = new Date(Date.now() + 3600000); // 1 hour
 
         await db.query('UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE user_id = $3', [verificationToken, tokenExpires, newUserId]);
 
-        const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+        const verificationUrl = `${process.env.FRONTEND_URL}/index.html?token=${verificationToken}`;
         const message = `<h1>Welcome to CampusKart!</h1><p>Please click the link below to verify your email. This link expires in 1 hour.</p><a href="${verificationUrl}" clicktracking=off>${verificationUrl}</a>`;
 
         await sendEmail({ email: usiuEmail, subject: 'CampusKart - Verify Your Email Address', message });
